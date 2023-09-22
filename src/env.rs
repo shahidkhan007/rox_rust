@@ -1,4 +1,7 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    ops::{Deref, DerefMut},
+};
 
 use crate::interpreter::Object;
 
@@ -12,6 +15,7 @@ pub struct Env {
 pub enum EnvError {
     VarNotFound(String),
     VarDefine(String),
+    VarAssign(String),
 }
 
 impl Env {
@@ -24,6 +28,21 @@ impl Env {
 
     pub fn define(&mut self, ident: String, value: Object) -> Result<(), EnvError> {
         self.values.insert(ident, value);
+        Ok(())
+    }
+
+    pub fn assign(&mut self, ident: String, value: Object) -> Result<(), EnvError> {
+        if self.values.contains_key(&ident[..]) {
+            self.define(ident, value).unwrap();
+        } else {
+            match self.enclosing.as_mut() {
+                Some(env) => {
+                    env.define(ident, value).unwrap();
+                }
+                None => return Err(EnvError::VarAssign(format!("Undefined variable {ident}."))),
+            }
+        }
+
         Ok(())
     }
 

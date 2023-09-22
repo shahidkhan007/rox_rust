@@ -69,6 +69,73 @@ impl<'a> Parser<'a> {
         return Stmt::Var(ident, initializer);
     }
 
+    fn for_statement(&mut self) -> Stmt {
+        self.consume(
+            TokenType::LEFT_PAREN,
+            "Expected a '(' after the for keyword.",
+        )
+        .unwrap();
+
+        let mut initializer = Option::None;
+        let mut cond = Option::None;
+        let mut increment = Option::None;
+
+        if self.matches(vec![TokenType::VAR]) {
+            initializer = Some(self.var_decl());
+        } else if self.matches(vec![TokenType::SEMICOLON]) {
+        } else {
+            initializer = Some(self.expr_statement());
+        }
+
+        if self.matches(vec![TokenType::SEMICOLON]) {
+        } else {
+            cond = Some(self.expression());
+        }
+
+        self.consume(
+            TokenType::SEMICOLON,
+            "Expected a ';' after the for loop condition.",
+        )
+        .unwrap();
+
+        if !self.check(TokenType::RIGHT_PAREN) {
+            increment = Some(self.expression());
+        }
+
+        self.consume(
+            TokenType::RIGHT_PAREN,
+            "Expected a ')' after the for loop clauses.",
+        )
+        .unwrap();
+
+        let mut body = self.statement();
+
+        body = match increment {
+            Some(inc) => {
+                let mut stmts = vec![body];
+                stmts.push(Stmt::Expression(inc));
+                Stmt::Block(stmts)
+            }
+            None => body,
+        };
+
+        body = match cond {
+            Some(expr) => Stmt::While(expr, Box::new(body)),
+            None => Stmt::While(Expr::Literal(token::Literal::Bool(true)), Box::new(body)),
+        };
+
+        match initializer {
+            Some(init) => {
+                let mut stmts = vec![body];
+                stmts.insert(0, init);
+                body = Stmt::Block(stmts);
+            }
+            None => {}
+        }
+
+        return body;
+    }
+
     fn statement(&mut self) -> Stmt {
         if self.matches(vec![TokenType::PRINT]) {
             return self.print_statement();
@@ -78,6 +145,8 @@ impl<'a> Parser<'a> {
             return self.block_statement();
         } else if self.matches(vec![TokenType::WHILE]) {
             return self.while_statement();
+        } else if self.matches(vec![TokenType::FOR]) {
+            return self.for_statement();
         } else {
             return self.expr_statement();
         }

@@ -175,6 +175,45 @@ impl Interpreter {
                     panic!();
                 }
             },
+            TokenType::EQUAL_EQUAL => match left.value {
+                Literal::Number(x) => match right.value {
+                    Literal::Number(y) => Literal::Bool(x == y),
+                    _ => {
+                        self.logger.error("Cannot compare non-numbers.".into());
+                        panic!();
+                    }
+                },
+                _ => {
+                    self.logger.error("Cannot compare non-numbers.".into());
+                    panic!();
+                }
+            },
+            TokenType::GREATER => match left.value {
+                Literal::Number(x) => match right.value {
+                    Literal::Number(y) => Literal::Bool(x > y),
+                    _ => {
+                        self.logger.error("Cannot compare non-numbers.".into());
+                        panic!();
+                    }
+                },
+                _ => {
+                    self.logger.error("Cannot compare non-numbers.".into());
+                    panic!();
+                }
+            },
+            TokenType::GREATER_EQUAL => match left.value {
+                Literal::Number(x) => match right.value {
+                    Literal::Number(y) => Literal::Bool(x >= y),
+                    _ => {
+                        self.logger.error("Cannot compare non-numbers.".into());
+                        panic!();
+                    }
+                },
+                _ => {
+                    self.logger.error("Cannot compare non-numbers.".into());
+                    panic!();
+                }
+            },
             x => {
                 panic!("No such operator as {:?}", x);
             }
@@ -207,7 +246,7 @@ impl Interpreter {
     fn assign_expr(&mut self, token: Token, expr: Expr) -> Object {
         let expr_val = self.eval_expr(expr);
 
-        self.env.define(token.lexeme, expr_val).unwrap();
+        self.env.assign(token.lexeme, expr_val).unwrap();
 
         Object {
             value: Literal::Nil,
